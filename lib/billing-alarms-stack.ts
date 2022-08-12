@@ -6,7 +6,7 @@ import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { Topic, Subscription, SubscriptionProtocol } from 'aws-cdk-lib/aws-sns';
 
 import { Function, Runtime, Code } from 'aws-cdk-lib/aws-lambda';
-import { AwsCustomResource } from 'aws-cdk-lib/custom-resources'
+import { SnsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 export class BillingAlarmsStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -30,33 +30,23 @@ export class BillingAlarmsStack extends Stack {
       topicName: 'BillingTopic'
     });
 
-    new Subscription(this, 'BillingSubscription', {
-      topic: topic,
-      protocol: SubscriptionProtocol.EMAIL,
-      endpoint: 'aphexlog@gmail.com'
-  });
-
   new SnsAction(topic);
 
   const lambdaFn = new Function(this, 'DiscordWebhookFunction', {
     code: Code.fromAsset('src/lambda'),
     handler: 'index.handler',
-    runtime: Runtime.NODEJS_12_X
+    runtime: Runtime.NODEJS_12_X,
+    events: [
+      new SnsEventSource(topic)
+    ]
   });
 
-  const discordWebhook = new AwsCustomResource(this, 'DiscordWebhook', {
-    installLatestAwsSdk: true,
-    onCreate: {
-      service: 'Lambda',
-      action: 'Invoke',
-      parameters: {
-        FunctionName: lambdaFn.functionName,
-        Payload: JSON.stringify({
-          content: 'Hello World!'
-        })
-      },
-    }
+  new Subscription(this, 'BillingSubscription', {
+    topic: topic,
+    protocol: SubscriptionProtocol.LAMBDA,
+    endpoint: lambdaFn.functionArn
   });
+
 
   }
 }
