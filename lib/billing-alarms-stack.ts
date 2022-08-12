@@ -1,16 +1,16 @@
-import * as cdk from 'aws-cdk-lib';
+import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { BillingAlarm } from 'aws-cdk-billing-alarm';
 
-export class BillingAlarmsStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+export class BillingAlarmsStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
-
-    // example resource
-    // const queue = new sqs.Queue(this, 'BillingAlarmsQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    // Create an alarm that emails `admin@example.com`
+    // if estimated charges exceed 50 USD
+    new BillingAlarm(this, 'AWSAccountBillingAlarm', {
+      monthlyThreshold: 50,
+      emails: ['aphexlog@gmail.com']
+    });
   }
 }
